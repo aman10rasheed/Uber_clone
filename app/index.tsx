@@ -1,10 +1,12 @@
+import { useAuth } from "@clerk/clerk-expo";
 import { Redirect } from "expo-router";
-import React from "react";
-import { SafeAreaView, Text, View } from "react-native";
 
-const index = () => {
-  return <Redirect href="./(auth)/welcome"/>
+const Page = () => {
+  const { isSignedIn } = useAuth();
+
+  if (isSignedIn) return <Redirect href="/(root)/(tab)/home" />;
+
+  return <Redirect href="/(auth)/welcome" />;
 };
 
-export default index;
-[]
+export default Page;
