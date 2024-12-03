@@ -7,6 +7,7 @@ import CustomButton from "@/components/CustomButton";
 import InputField from "@/components/inputField";
 import OAuth from "@/components/OAuth";
 import { icons, images } from "@/constants";
+import { fetchAPI } from "@/lib/fetch";
 
 const SignUp = () => {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -36,39 +37,56 @@ const SignUp = () => {
         state: "pending",
       });
     } catch (err: any) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
       console.log(JSON.stringify(err, null, 2));
       Alert.alert("Error", err.errors[0].longMessage);
     }
   };
+
   const onPressVerify = async () => {
     if (!isLoaded) return;
+
     try {
       const completeSignUp = await signUp.attemptEmailAddressVerification({
         code: verification.code,
       });
+
       if (completeSignUp.status === "complete") {
+        await fetchAPI("/(api)/user", {
+          method: "POST",
+          body: JSON.stringify({
+            name: form.name,
+            email: form.email,
+            clerkId: completeSignUp.createdUserId,
+          }),
+        });
         await setActive({ session: completeSignUp.createdSessionId });
         setVerification({
           ...verification,
           state: "success",
         });
+        setShowSuccessModal(true);
+        router.push(`/(root)/(tab)/home`);
       } else {
         setVerification({
           ...verification,
           error: "Verification failed. Please try again.",
-          state: "failed",
+          state: "pending",
         });
+        Alert.alert("Error", "Verification failed. Please try again.");
       }
     } catch (err: any) {
+      const errorMessage =
+        err?.errors?.[0]?.longMessage ||
+        "Something went wrong. Please try again.";
       setVerification({
         ...verification,
-        error: err.errors[0].longMessage,
-        state: "failed",
+        error: errorMessage,
+        state: "pending",
       });
+      Alert.alert("Error", errorMessage);
     }
   };
+
   return (
     <ScrollView className="flex-1 bg-white">
       <View className="flex-1 bg-white">
@@ -117,14 +135,7 @@ const SignUp = () => {
             <Text className="text-primary-500">Log In</Text>
           </Link>
         </View>
-        <ReactNativeModal
-          isVisible={verification.state === "pending"}
-          onModalHide={() => {
-            if (verification.state === "success") {
-              setShowSuccessModal(true); 
-            }
-          }}
-        >
+        <ReactNativeModal isVisible={verification.state === "pending"}>
           <View className="bg-white px-7 py-9 rounded-2xl min-h-[300px]">
             <Text className="font-JakartaExtraBold text-2xl mb-2">
               Verification
@@ -180,4 +191,5 @@ const SignUp = () => {
     </ScrollView>
   );
 };
+
 export default SignUp;

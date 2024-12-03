@@ -39,7 +39,8 @@ import {
               )}
               <TextInput
                 className={`rounded-full p-4 font-JakartaSemiBold text-[15px] flex-1 ${inputStyle} text-left`}
-                secureTextEntry={secureTextEntry}
+                secureTextEntry={secureTextEntry} 
+                placeholderTextColor="#A0A0A0"
                 {...props}
               />
             </View>

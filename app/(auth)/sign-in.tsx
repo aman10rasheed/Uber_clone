@@ -2,14 +2,42 @@ import CustomButton from "@/components/CustomButton";
 import InputField from "@/components/inputField";
 import OAuth from "@/components/OAuth";
 import { icons, images } from "@/constants";
-import { Link } from "expo-router";
-import { useState } from "react";
+import { useSignIn } from "@clerk/clerk-expo";
+import { Link, router } from "expo-router";
+import { useCallback, useState } from "react";
 import { Image, ScrollView, Text, View } from "react-native";
+
 const SignIn = () => {
+  const { signIn, setActive, isLoaded } = useSignIn();
   const [form, setForm] = useState({
-    eamil:"",
-    password:""
-  })
+    email: "",
+    password: "",
+  });
+
+  const onSignInPress = useCallback(async () => {
+    if (!isLoaded) {
+      return;
+    }
+
+    try {
+      const signInAttempt = await signIn.create({
+        identifier: form.email,
+        password: form.password,
+      });
+
+      if (signInAttempt.status === "complete") {
+        await setActive({ session: signInAttempt.createdSessionId });
+        router.push(`/(root)/(tab)/home`);
+      } else {
+        // See https://clerk.com/docs/custom-flows/error-handling
+        // for more info on error handling
+        console.error(JSON.stringify(signInAttempt, null, 2));
+      }
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+    }
+  }, [isLoaded, form.email, form.password]);
+
   return (
     <ScrollView className="flex-1 bg-white">
       <View className="flex-1 bg-white">
@@ -24,8 +52,8 @@ const SignIn = () => {
             label={"Email"}
             placeholder="Enter name"
             icon={icons.email}
-            value={form.eamil}
-            onChangeText={(value) => setForm({ ...form, eamil: value })}
+            value={form.email}
+            onChangeText={(value) => setForm({ ...form, email: value })}
           />
           <InputField
             label={"Password"}
@@ -37,10 +65,10 @@ const SignIn = () => {
           />
           <CustomButton
             title="Sign In"
-            // onPress={onSignUpPress}
+            onPress={onSignInPress}
             className="mt-6"
           />
-            <OAuth/>
+          <OAuth />
           <Link
             href="/sign-up"
             className="text-lg text-center text-general-200 mt-10"
